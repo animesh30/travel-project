@@ -21,3 +21,9 @@ class ItineraryResponse(BaseModel):
     total_price: float
     total_duration_min: int
     all_legs_available: bool
+
+class SearchResponse(BaseModel):
+    path: List[str]
+    total_price: int
+    total_duration: int
+

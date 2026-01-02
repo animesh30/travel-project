@@ -13,6 +13,9 @@ import math
 import heapq
 import pprint
 
+from typing import List, Dict
+from routing.graph import Graph
+
 # Data structures
 class Node:
     def __init__(self, code: str, name: str, lat: float, lon: float):
@@ -179,5 +182,41 @@ edges = [
 ]
 for e in edges:
     g.add_edge(e)
+
+class RouteEngine:
+    def __init__(self, graph: Graph):
+        self.graph = graph
+
+    def find_routes(self, source: str, destination: str, max_hops: int = 2):
+        results = []
+
+        def dfs(current, path, cost, duration):
+            if len(path) > max_hops + 1:
+                return
+
+            if current == destination:
+                results.append({
+                    "path": path.copy(),
+                    "total_price": cost,
+                    "total_duration": duration
+                })
+                return
+
+            for edge in self.graph.neighbors(current):
+                if edge["to"] in path:
+                    continue
+                if not edge["available"]:
+                    continue
+
+                dfs(
+                    edge["to"],
+                    path + [edge["to"]],
+                    cost + edge["price"],
+                    duration + edge["duration"]
+                )
+
+        dfs(source, [source], 0, 0)
+        return results
+
 
 

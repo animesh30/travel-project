@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 
-
+from routing.graph import Graph
+from routing.route_engine import RouteEngine
 from my_providers.mock_transport_providers import MockTransportProvider
-from my_models.schemas import SearchRequest, ItineraryResponse
+from my_models.schemas import SearchRequest, ItineraryResponse, SearchResponse
 
 app = FastAPI(
     title="Travel Route Mixer",
@@ -28,53 +29,27 @@ async def health_check():
     return {"status": "ok"}
 
 
-@app.post("/search", response_model=List[ItineraryResponse])
-async def search_routes(request: SearchRequest):
-    """
-    Entry point for UI.
-    Example:
-    Source: A
-    Destination: C
-    """
+@app.get("/search", response_model=List[SearchResponse])
+async def search(
+    source: str = Query(...),
+    destination: str = Query(...)
+):
+    provider = MockTransportProvider()
+    graph = Graph()
 
-    source = request.source
-    destination = request.destination
+    # Build graph from mock provider
+    connections = await provider.get_connections(source)
+    for conn in connections:
+        graph.add_edge(source, conn)
 
-    itineraries = []
+    # Add second level connections
+    for conn in connections:
+        next_connections = await provider.get_connections(conn["to"])
+        for nc in next_connections:
+            graph.add_edge(conn["to"], nc)
 
-    # Direct options
-    direct_options = await provider.get_options(source, destination)
+    engine = RouteEngine(graph)
+    routes = engine.find_routes(source, destination)
 
-    for option in direct_options:
-        itineraries.append(
-            ItineraryResponse(
-                legs=[option],
-                total_price=option.price,
-                total_duration_min=option.duration_min,
-                all_legs_available=option.available
-            )
-        )
-
-    # Example: A → B → C (hardcoded for MVP)
-    if source == "A" and destination == "C":
-        ab = await provider.get_options("A", "B")
-        bc = await provider.get_options("B", "C")
-
-        for leg1 in ab:
-            if not leg1.available:
-                continue
-            for leg2 in bc:
-                if not leg2.available:
-                    continue
-
-                itineraries.append(
-                    ItineraryResponse(
-                        legs=[leg1, leg2],
-                        total_price=leg1.price + leg2.price,
-                        total_duration_min=leg1.duration_min + leg2.duration_min,
-                        all_legs_available=True
-                    )
-                )
-
-    return itineraries
+    return routes
 
