@@ -1,17 +1,19 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import SearchForm from "./components/SearchForm";
 import Results from "./components/Results";
 
-export default function App() {
+function App() {
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   return (
-    <div className="container">
-      <h1>🚆 Travel Route Mixer</h1>
-      <SearchForm setResults={setResults} setLoading={setLoading} />
-      {loading && <p>Loading routes...</p>}
-      <Results results={results} />
+    <div>
+      <h1>Travel Route Finder</h1>
+
+      <SearchForm onResults={setResults} />
+
+      <Results data={results} />
     </div>
   );
 }
+
+export default App;

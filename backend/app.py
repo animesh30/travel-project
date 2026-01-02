@@ -15,7 +15,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # for MVP
+    allow_origins=["*","http://localhost:5173"],  # for MVP
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
